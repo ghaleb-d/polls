@@ -4,7 +4,7 @@ mod polls;
 mod user;
 
 use db::init_pool;
-use user::create_user;
+use user::choose_user_flow;
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
@@ -13,7 +13,7 @@ async fn main() -> Result<(), sqlx::Error> {
     sqlx::migrate!().run(&pool).await?;
 
     // Step 2: Create or fetch user
-    let user = match create_user(&pool).await {
+    let user = match choose_user_flow(&pool).await {
         Ok(u) => u,
         Err(e) => {
             eprintln!("❌ Could not create or fetch user: {}", e);

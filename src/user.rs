@@ -7,10 +7,95 @@ use chrono::Utc;
 // For reading from the terminal
 use std::io;
 // For generating unique user IDs
+use sqlx::Error;
 use uuid::Uuid;
 
+// This function decides whether the user wants to log in or create a new account.
+// It returns a Result<User, sqlx::Error> after calling either `load_user` or `create_user`.
+pub async fn choose_user_flow(pool: &DbPool) -> Result<User, Error> {
+    // Prompt the user with a yes/no question
+    println!("Do you have an existing username? (yes/no):");
+
+    // Prepare a mutable String to read input into
+    let mut answer = String::new();
+
+    // Read the user's input from the terminal (e.g., "yes" or "no")
+    io::stdin().read_line(&mut answer)?;
+
+    // Clean up input by trimming whitespace and converting to lowercase
+    let answer = answer.trim().to_lowercase();
+
+    // Use match to handle the input value
+    match answer.as_str() {
+        "yes" => {
+            // If user says "yes", try to load the user from the DB
+            load_user(pool).await
+        }
+        "no" => {
+            // If user says "no", prompt for a new username and create the user in the DB
+            create_user(pool).await
+        }
+        _ => {
+            // If user types anything else, show an error message
+            println!("❌ Invalid input. Please answer with 'yes' or 'no'.");
+
+            // Return an error so that main.rs can handle it
+            Err(Error::ColumnNotFound("Invalid yes/no response".into()))
+        }
+    }
+}
+
+// This function is used to authenticate a user by checking if the entered username already exists in the database.
+async fn load_user(pool: &DbPool) -> Result<User, sqlx::Error> {
+    // Prompt the user to enter their username
+    println!("Enter your username to log in:");
+
+    // Prepare a String to hold the input
+    let mut username = String::new();
+
+    // Read input from the terminal and store it in the `username` variable
+    io::stdin().read_line(&mut username)?;
+
+    // Clean up the input:
+    // - remove newline/whitespace with trim()
+    // - normalize to lowercase for case-insensitive matching
+    let username = username.trim().to_lowercase();
+
+    // Validate: if the username is empty, return an error immediately
+    if username.is_empty() {
+        return Err(sqlx::Error::ColumnNotFound("Username is empty".into()));
+    }
+
+    // Attempt to fetch the user from the database using their username
+    // - query_as! maps the result row to your `User` struct
+    // - $1 is a placeholder for the first argument passed (here: `username`)
+    let user = sqlx::query_as!(
+        User,
+        r#"
+        SELECT id, username, user_creation_time, voted_polls
+        FROM users
+        WHERE username = $1
+        "#,
+        username
+    )
+    // `fetch_optional()` returns an Option<User> — Some(user) if found, None if not
+    .fetch_optional(pool)
+    .await?;
+
+    // Handle the result:
+    // - If the user exists, return it (success)
+    // - If not, print a message and return an error
+    match user {
+        Some(user) => Ok(user),
+        None => {
+            println!("❌ No user found with that username.");
+            Err(Error::RowNotFound)
+        }
+    }
+}
+
 // Asynchronous function to either fetch an existing user or create a new one
-pub async fn create_user(pool: &DbPool) -> Result<User, sqlx::Error> {
+async fn create_user(pool: &DbPool) -> Result<User, sqlx::Error> {
     // Prompt the user to enter a username
     println!("Please enter a username");
 
@@ -38,10 +123,11 @@ pub async fn create_user(pool: &DbPool) -> Result<User, sqlx::Error> {
         "#,
         username
     )
-    .fetch_optional(pool) // Returns Option<User>
-    .await? // Propagates DB error if any
+    .fetch_optional(pool)
+    .await?
     {
         // If found, return the existing user
+        println!("this user already exists{}", username);
         return Ok(user);
     }
 
