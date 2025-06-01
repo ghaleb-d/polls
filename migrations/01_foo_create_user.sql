@@ -4,3 +4,4 @@ CREATE TABLE IF NOT EXISTS users (
     user_creation_time TIMESTAMP NOT NULL,
     voted_polls UUID[] NOT NULL DEFAULT '{}'
 );
+

@@ -1,8 +1,9 @@
+mod cli;
 mod db;
 mod models;
 mod polls;
 mod user;
-
+use cli::run_cli;
 use db::init_pool;
 use user::choose_user_flow;
 
@@ -20,6 +21,8 @@ async fn main() -> Result<(), sqlx::Error> {
             return Ok(()); // Graceful exit
         }
     };
+    run_cli(&pool, &user).await?;
+
     println!("👤 Logged in user: {:#?}", user);
     println!("✅ Welcome, {}!", user.username);
 
