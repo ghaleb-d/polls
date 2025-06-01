@@ -20,7 +20,7 @@ async fn main() -> Result<(), sqlx::Error> {
             return Ok(()); // Graceful exit
         }
     };
-
+    println!("👤 Logged in user: {:#?}", user);
     println!("✅ Welcome, {}!", user.username);
 
     Ok(())
