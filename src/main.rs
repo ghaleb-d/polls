@@ -3,6 +3,8 @@ mod db;
 mod models;
 mod polls;
 mod user;
+mod vote;
+
 use cli::run_cli;
 use db::init_pool;
 use user::choose_user_flow;
@@ -14,14 +16,14 @@ async fn main() -> Result<(), sqlx::Error> {
     sqlx::migrate!().run(&pool).await?;
 
     // Step 2: Create or fetch user
-    let user = match choose_user_flow(&pool).await {
+    let mut user = match choose_user_flow(&pool).await {
         Ok(u) => u,
         Err(e) => {
             eprintln!("❌ Could not create or fetch user: {}", e);
             return Ok(()); // Graceful exit
         }
     };
-    run_cli(&pool, &user).await?;
+    run_cli(&pool, &mut user).await?;
 
     println!("👤 Logged in user: {:#?}", user);
     println!("✅ Welcome, {}!", user.username);

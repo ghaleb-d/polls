@@ -1,6 +1,5 @@
 use crate::db::DbPool;
-use crate::models::Poll;
-use crate::models::User;
+use crate::models::{Poll, User};
 use chrono::{Duration, Utc};
 use sqlx::Error;
 use std::io;

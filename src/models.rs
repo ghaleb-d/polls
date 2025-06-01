@@ -14,14 +14,6 @@ pub struct Poll {
     pub created_by: Uuid,
 }
 
-// Choice struct represents a single choice in a poll
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Choice {
-    pub id: Uuid,     // Unique identifier to prevent collisions
-    pub text: String, // label of the choice or description
-    pub votes: u32,   // unsigned and enough to track how many votes
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
