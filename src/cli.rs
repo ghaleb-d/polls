@@ -1,6 +1,6 @@
 use crate::db::DbPool;
 use crate::models::User;
-use crate::polls::{create_poll, view_polls, my_polls};
+use crate::polls::{create_poll, my_polls, view_polls};
 use std::io;
 
 pub async fn run_cli(pool: &DbPool, user: &User) -> Result<(), sqlx::Error> {
@@ -13,8 +13,7 @@ pub async fn run_cli(pool: &DbPool, user: &User) -> Result<(), sqlx::Error> {
         println!("5. Exit");
 
         let mut userchoice = String::new();
-        io::stdin()
-            .read_line(&mut userchoice)?;
+        io::stdin().read_line(&mut userchoice)?;
 
         match userchoice.trim() {
             "1" => {
@@ -37,8 +36,15 @@ pub async fn run_cli(pool: &DbPool, user: &User) -> Result<(), sqlx::Error> {
                 }
             }
             "3" => {
-                println!("📋 Here are your polls:");
+                println!("📋 We'll get your polls");
                 let your_polls = my_polls(pool, user).await?;
+                if your_polls.is_empty() {
+                    println!("Sorry you have no polls");
+                } else {
+                    for (i, your_polls) in your_polls.iter().enumerate() {
+                        println!("\n #{},{:#?} :", i + 1, your_polls);
+                    }
+                }
             }
             "4" => {
                 println!("🗳️ Voting not implemented yet.");

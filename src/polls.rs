@@ -86,7 +86,7 @@ pub async fn view_polls(pool: &DbPool) -> Result<Vec<Poll>, Error> {
     Ok(polls)
 }
 
-pub async fn my_polls(pool: &DbPool, user: &User) ->  Result<Vec<Poll>, Error>{
+pub async fn my_polls(pool: &DbPool, user: &User) -> Result<Vec<Poll>, Error> {
     let my_polls = sqlx::query_as!(
         Poll,
         r#"
