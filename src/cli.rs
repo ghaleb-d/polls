@@ -1,6 +1,6 @@
 use crate::db::DbPool;
 use crate::models::User;
-use crate::polls::{create_poll, view_polls};
+use crate::polls::{create_poll, view_polls, my_polls};
 use std::io;
 
 pub async fn run_cli(pool: &DbPool, user: &User) -> Result<(), sqlx::Error> {
@@ -37,7 +37,8 @@ pub async fn run_cli(pool: &DbPool, user: &User) -> Result<(), sqlx::Error> {
                 }
             }
             "3" => {
-                println!("To be implemented")
+                println!("📋 Here are your polls:");
+                let your_polls = my_polls(pool, user).await?;
             }
             "4" => {
                 println!("🗳️ Voting not implemented yet.");

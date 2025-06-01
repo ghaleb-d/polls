@@ -85,3 +85,20 @@ pub async fn view_polls(pool: &DbPool) -> Result<Vec<Poll>, Error> {
 
     Ok(polls)
 }
+
+pub async fn my_polls(pool: &DbPool, user: &User) ->  Result<Vec<Poll>, Error>{
+    let my_polls = sqlx::query_as!(
+        Poll,
+        r#"
+        SELECT id, question, choices, vote_counts, creation_time, deadline, created_by
+        FROM polls
+        WHERE created_by = $1
+        ORDER BY creation_time DESC
+        "#,
+        user.id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(my_polls)
+}
