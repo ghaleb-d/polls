@@ -14,7 +14,6 @@ pub struct Poll {
     pub created_by: Uuid,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
     pub id: Uuid,         // could help avoiding duplicate voting and track votes per user

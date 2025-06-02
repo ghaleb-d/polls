@@ -1,12 +1,11 @@
 use crate::db::DbPool;
-use crate::models::{User};
+use crate::models::User;
 use crate::polls::view_polls;
 use std::io;
 
-    // Function to handle user voting on a poll.
-    // It fetches polls from the database, checks for duplicates, updates vote count, and records the user's vote.
-    pub async fn vote_on_poll(pool: &DbPool, user: &mut User) -> Result<(), sqlx::Error>
-    {
+// Function to handle user voting on a poll.
+// It fetches polls from the database, checks for duplicates, updates vote count, and records the user's vote.
+pub async fn vote_on_poll(pool: &DbPool, user: &mut User) -> Result<(), sqlx::Error> {
     // Step 1: Fetch all polls from the database
     let polls = view_polls(pool).await?;
     if polls.is_empty() {
@@ -93,8 +92,10 @@ use std::io;
     user.voted_polls = updated_voted;
 
     // Step 9: Confirm to the user that their vote has been recorded
-    println!("✅ Your vote for \"{}\" has been recorded!", selected_poll.choices[choice_index - 1]);
+    println!(
+        "✅ Your vote for \"{}\" has been recorded!",
+        selected_poll.choices[choice_index - 1]
+    );
 
     Ok(())
 }
-

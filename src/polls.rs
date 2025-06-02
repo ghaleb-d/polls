@@ -101,3 +101,23 @@ pub async fn my_polls(pool: &DbPool, user: &User) -> Result<Vec<Poll>, Error> {
 
     Ok(my_polls)
 }
+
+pub async fn view_voted_pollts(pool: &DbPool, user: &User) -> Result<Vec<Poll>, Error> {
+    if user.voted_polls.is_empty() {
+        return Ok(vec![]);
+    }
+    let polls = sqlx::query_as!(
+        Poll,
+        r#"
+        SELECT id, question, choices, vote_counts, creation_time, deadline, created_by
+        FROM polls
+        WHERE id = ANY($1)
+        ORDER BY creation_time DESC
+        "#,
+        &user.voted_polls
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(polls)
+}
