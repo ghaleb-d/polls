@@ -1,54 +1,106 @@
-# 🗳️ RustPoll — A Rust CLI Polling App with PostgreSQL
+# 🗳️ Rust CLI Poll Voting System
 
-RustPoll is a simple command-line voting app built in Rust, using PostgreSQL as a backend. It allows users to register via the terminal, automatically checks for existing accounts, and stores everything in a real database.
-
----
-
-## ✅ Features So Far
-
-- Terminal-based interface (`cargo run`)
-- User creation with input validation
-- Check if a user already exists in the database
-- PostgreSQL integration using `sqlx`
-- All user data stored and queried from the database
-- pgAdmin can be used to view data, but all actions are handled from the terminal
+A fully-featured command-line poll voting application built in **Rust** with persistent data storage in **PostgreSQL** — containerized using **Docker** for easy deployment and testing.
 
 ---
 
-## 🧱 Project Structure
+## 📦 Features
 
-src/
-├── main.rs # Entry point and CLI menu
-├── db.rs # Connects to PostgreSQL
-├── user.rs # Handles user creation and lookup
-├── models.rs # Contains the User struct
-
+✅ User registration and login  
+✅ Create polls with up to 4 choices  
+✅ View all polls or your own created polls  
+✅ Vote only once per poll  
+✅ Prevent duplicate voting (tracked by user ID)  
+✅ Show vote results with live percentages and visual bars  
+✅ Color-coded terminal output with `colored` crate  
+✅ Fully Dockerized: PostgreSQL + CLI app
 
 ---
 
-## 🛢️ Database Setup
+## 🧠 System Design Overview
 
-**Database name:** `rust_poll`
+### 🧩 Architecture
 
-**Table created:**
++-------------+ Docker Compose +---------------+
+| User CLI | <--------------------> | PostgreSQL |
+| (Rust App) | | (Persistent DB)|
++-------------+ +---------------+
+
+
+- Rust app runs in an isolated container
+- Connects to a PostgreSQL container via `DATABASE_URL`
+- Uses SQLx for DB queries
+- CLI interacts with user for creating and voting on polls
+
+---
+
+## 🗃️ Database Schema
+
+### `users` table
 
 ```sql
-CREATE TABLE users (
-    id UUID PRIMARY KEY,
-    username TEXT NOT NULL UNIQUE,
-    user_creation_time TIMESTAMP NOT NULL,
-    voted_polls UUID[] NOT NULL DEFAULT '{}'
-);
+id UUID PRIMARY KEY,
+username TEXT UNIQUE NOT NULL,
+user_creation_time TIMESTAMP NOT NULL,
+voted_polls UUID[] NOT NULL
 
-🔧 Technologies Used
+### `polls` table
+id UUID PRIMARY KEY,
+question TEXT NOT NULL,
+choices TEXT[] NOT NULL,
+vote_counts INTEGER[] NOT NULL,
+creation_time TIMESTAMP NOT NULL,
+deadline TIMESTAMP,
+created_by UUID REFERENCES users(id)
 
-🦀 Rust (async)
-🐘 PostgreSQL (installed locally)
-📦 SQLx (for database queries)
-🖥️ pgAdmin 4 (for DB inspection, not required)
-🧭 Next Goals
+🚀 Getting Started (with Docker)
 
- Poll creation and storage
- Voting system with vote tracking
- CLI menu to navigate options
- Optional: SQLx migrations and Docker support
+🔧 Prerequisites
+Docker installed on your system
+docker compose available (Docker Desktop includes it)
+
+📁 Step 1: Clone the repo
+git clone this repo
+
+🛠 Step 2: Build & Start the project
+docker compose up --build
+
+✅ This will:
+
+Build the Rust app from source
+Start a PostgreSQL database
+Connect both in a shared network
+🖥️ Step 3: Run the CLI in your own terminal
+You can run the app directly inside the container using:
+
+🧪 Usage Flow
+
+On startup, user is asked if they have an existing username
+If no → register a new user
+Menu:
+1- Create a poll
+2- View all polls
+3- Vote on a poll
+4- View your polls
+5- View polls you’ve voted on
+6- Exit
+
+🧱
+
+🦀 Rust
+🐘 PostgreSQL
+🐳 Docker & Compose
+🧵 sqlx for async DB
+🎨 colored for CLI styling
+
+💡 Ideas for Future Improvements
+
+Add password-based authentication
+Export poll results to JSON/CSV
+Add web API using Axum or Actix
+Frontend: build a React/Vue dashboard
+Time-based poll expiration and automatic closure
+
+📄 License
+
+MIT © 2024 Ghaleb
