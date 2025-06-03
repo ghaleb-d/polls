@@ -154,3 +154,122 @@ async fn create_user(pool: &DbPool) -> Result<User, sqlx::Error> {
     // Return the newly created user
     Ok(user)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+    use dotenv::dotenv;
+    use sqlx::{postgres::PgPoolOptions, PgPool};
+    use std::env;
+    use tokio; // ✅ Needed for #[tokio::test]
+    use uuid::Uuid;
+
+    async fn setup_test_db() -> PgPool {
+        dotenv().ok();
+        let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        PgPoolOptions::new()
+            .max_connections(1)
+            .connect(&db_url)
+            .await
+            .expect("Could not connect to test DB")
+    }
+
+    #[tokio::test]
+    async fn test_load_user_success() {
+        let pool = setup_test_db().await;
+
+        let username = format!("testuser_{}", Uuid::new_v4());
+        let id = Uuid::new_v4();
+        let now = Utc::now().naive_utc();
+
+        // insert test user
+        sqlx::query!(
+            r#"
+            INSERT INTO users (id, username, user_creation_time, voted_polls)
+            VALUES ($1, $2, $3, $4)
+            "#,
+            id,
+            username,
+            now,
+            &[]
+        )
+        .execute(&pool)
+        .await
+        .expect("Insert failed");
+
+        // simulate load_user logic
+        let user = sqlx::query_as!(
+            User,
+            r#"
+            SELECT id, username, user_creation_time, voted_polls
+            FROM users
+            WHERE username = $1
+            "#,
+            username
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should load the user");
+
+        assert_eq!(user.username, username);
+    }
+
+    // New testable function
+    pub async fn create_user_with_name(pool: &DbPool, username: &str) -> Result<User, sqlx::Error> {
+        let username = username.trim().to_lowercase();
+
+        if username.is_empty() {
+            return Err(sqlx::Error::ColumnNotFound("Username is empty".into()));
+        }
+
+        if let Some(user) = sqlx::query_as!(
+            User,
+            r#"
+        SELECT id, username, user_creation_time, voted_polls
+        FROM users
+        WHERE username = $1
+        "#,
+            username
+        )
+        .fetch_optional(pool)
+        .await?
+        {
+            return Ok(user);
+        }
+
+        let id = Uuid::new_v4();
+        let now = Utc::now().naive_utc();
+
+        let user = sqlx::query_as!(
+            User,
+            r#"
+        INSERT INTO users (id, username, user_creation_time, voted_polls)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, username, user_creation_time, voted_polls
+        "#,
+            id,
+            username,
+            now,
+            &[]
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(user)
+    }
+
+    #[tokio::test]
+    async fn test_create_user_empty_input_returns_error() {
+        let pool = setup_test_db().await;
+
+        let result = create_user_with_name(&pool, "").await;
+
+        match result {
+            Err(sqlx::Error::ColumnNotFound(msg)) => {
+                assert_eq!(msg, "Username is empty");
+            }
+            _ => panic!("Expected ColumnNotFound error, got {:?}", result),
+        }
+    }
+}

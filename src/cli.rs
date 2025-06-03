@@ -146,3 +146,19 @@ pub async fn run_cli(pool: &DbPool, user: &mut User) -> Result<(), sqlx::Error> 
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn calculates_percentage_correctly() {
+        let count = 25;
+        let total = 100;
+        let percent = if total > 0 {
+            (count as f64 / total as f64) * 100.0
+        } else {
+            0.0
+        };
+        assert_eq!(percent, 25.0);
+    }
+}

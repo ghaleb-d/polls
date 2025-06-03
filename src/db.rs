@@ -5,7 +5,7 @@
 // Load environment variables from the `.env` file into std::env at runtime
 // Used to access environment variables like DATABASE_URL
 use dotenv::dotenv;
-use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::env;
 
 // Define a type alias for cleaner code throughout the app.
@@ -22,4 +22,16 @@ pub async fn init_pool() -> Result<DbPool, sqlx::Error> {
         .max_connections(5)
         .connect(&db_url)
         .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio;
+
+    #[tokio::test]
+    async fn test_init_pool_success() {
+        let pool_result = init_pool().await;
+        assert!(pool_result.is_ok(), "Failed to initialize pool");
+    }
 }
